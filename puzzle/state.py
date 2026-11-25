@@ -24,20 +24,47 @@ class State:
     def blank_index(self) -> int:
         return self.tiles.index(0)
 
+    @property
+    def is_solvable(self) -> bool:
+        """Um estado do 8-puzzle tem solução se o número de inversões for par."""
+        pecas = [p for p in self.tiles if p != 0]
+        inversoes = sum(
+            1 for i in range(len(pecas)) for j in range(i + 1, len(pecas)) if pecas[i] > pecas[j]
+        )
+        return inversoes % 2 == 0
+
     def neighbors(self) -> List["State"]:
         """Retorna os estados filhos válidos a partir deste estado."""
-        # TODO: implemente a geração de estados filhos
-        raise NotImplementedError
+        filhos = []
+        i = self.blank_index
+        linha, coluna = divmod(i, 3)
+
+        # movimentos do espaço vazio: (ação, deslocamento linha, deslocamento coluna)
+        movimentos = [("UP", -1, 0), ("DOWN", 1, 0), ("LEFT", 0, -1), ("RIGHT", 0, 1)]
+
+        for acao, dl, dc in movimentos:
+            nl, nc = linha + dl, coluna + dc
+            if 0 <= nl < 3 and 0 <= nc < 3:
+                j = nl * 3 + nc
+                novo = list(self.tiles)
+                novo[i], novo[j] = novo[j], novo[i]
+                filhos.append(State(tuple(novo), parent=self, action=acao, cost=self.cost + 1))
+
+        return filhos
 
     def path(self) -> List["State"]:
         """Retorna a sequência de estados do estado inicial até este."""
-        # TODO: implemente a reconstrução do caminho usando self.parent
-        raise NotImplementedError
+        caminho = []
+        atual = self
+        while atual is not None:
+            caminho.append(atual)
+            atual = atual.parent
+        caminho.reverse()
+        return caminho
 
     def actions(self) -> List[str]:
         """Retorna a sequência de ações do estado inicial até este."""
-        # TODO: implemente usando path()
-        raise NotImplementedError
+        return [estado.action for estado in self.path() if estado.action is not None]
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, State) and self.tiles == other.tiles
